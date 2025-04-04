@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "optimizer.h"
+#include "matrix.h"
 
 class ConvLayer {
   public:
@@ -13,11 +14,16 @@ class ConvLayer {
     std::unique_ptr<Optimizer> kernel_optimizer, bias_optimizer;
     int init_type; // 0: random, 1: He, 2: LeCun
 
-    ConvLayer(std::unique_ptr<Optimizer> opt, int fan_in, int init = 0) : kernel(3, 3), grad_kernel(3, 3), bias(0.0), grad_bias(0.0),
-      kernel_optimizer(std::move(opt -> clone())), bias_optimizer(std::move(opt -> clone())), init_type(init) {
-        if (init_type == 0) kernel.randomize();    // Random
+    ConvLayer(std::unique_ptr<Optimizer> opt, int fan_in, int init=0) : kernel(3, 3), grad_kernel(3, 3), bias(0.0), grad_bias(0.0),
+        kernel_optimizer(std::move(opt -> clone())), bias_optimizer(std::move(opt -> clone())), init_type(init) {
+        initialize(fan_in);
+    }
+
+    void initialize(int fan_in) {
+        if (init_type == 0) kernel.random_init();    // random
         else if (init_type == 1) kernel.he_init(fan_in);    // He
         else if (init_type == 2) kernel.lecun_init(fan_in);    // LeCun
+        bias = 0.0;
     }
 
     ConvLayer(const Matrix& k) : kernel(k) {}

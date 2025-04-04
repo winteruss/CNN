@@ -30,6 +30,15 @@ class Matrix {
         }
     }
 
+    void randomize(double min_val = -0.5, double max_val = 0.5) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                double rand_val = min_val + (max_val - min_val) * (rand() / (double)RAND_MAX);
+                data[i][j] = rand_val;
+            }
+        }
+    }
+
     void print() const {
         for (const auto& row : data) {
             for (double val : row) {
@@ -85,29 +94,24 @@ class Matrix {
         return flipped;
     }
 
-    Matrix normalize() const {    // Min-Max Normalization
+    // Norm.s
+    Matrix min_max_normalize() const {    // Min-Max Norm.
         Matrix normalized(rows, cols);
-        double max_val = data[0][0];
-        double min_val = data[0][0];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                max_val = std::max(max_val, data[i][j]);
-                min_val = std::min(min_val, data[i][j]);
-            }
+        double max_val = data[0][0], min_val = data[0][0];
+        for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
+            max_val = std::max(max_val, data[i][j]);
+            min_val = std::min(min_val, data[i][j]);
         }
-
         double range = max_val - min_val;
         if (range == 0.0) range = 1.0;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                normalized.data[i][j] = (data[i][j] - min_val) / range;
-            }
+        for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
+            normalized.data[i][j] = (data[i][j] - min_val) / range;
         }
         return normalized;
     }
 
-    Matrix standardize() const {    // Z-Score Standardization
-        Matrix standardized(rows, cols);
+    Matrix z_score_normalize() const {    // Z-Score Norm.
+        Matrix normalized(rows, cols);
         double mean = 0.0, variance = 0.0;
 
         for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) mean += data[i][j];
@@ -121,28 +125,26 @@ class Matrix {
         double std_dev = std::sqrt(variance + 1e-8);
 
         for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
-            standardized.data[i][j] = (data[i][j] - mean) / std_dev;
+            normalized.data[i][j] = (data[i][j] - mean) / std_dev;
         }
-        return standardized;
+        return normalized;
     }
 
-    void randomize(double min_val = -0.5, double max_val = 0.5) {
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                double rand_val = min_val + (max_val - min_val) * (rand() / (double)RAND_MAX);
-                data[i][j] = rand_val;
-            }
+    // Init.s
+    void random_init(double min_val = -0.5, double max_val = 0.5) {    // Random Init.
+        for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
+            data[i][j] = min_val + (max_val - min_val) * (rand() / (double)RAND_MAX);
         }
     }
 
-    void he_init(int fan_in) {    // He Initialization
+    void he_init(int fan_in) {    // He Init.
         double std_dev = std::sqrt(2.0 / fan_in);
         for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
             data[i][j] = std_dev * (2.0 * (rand() / (double)RAND_MAX) - 1.0);
         }
     }
 
-    void lecun_init(int fan_in) {    // LeCun Initization
+    void lecun_init(int fan_in) {    // LeCun Init.
         double std_dev = std::sqrt(1.0 / fan_in);
         for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
             data[i][j] = std_dev * (2.0 * (rand() / (double)RAND_MAX) - 1.0);

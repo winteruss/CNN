@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "optimizer.h"
+#include "matrix.h"
 
 class FCLayer { 
   public:
@@ -19,12 +20,15 @@ class FCLayer {
       bias(Matrix(output_size, 1)),
       grad_bias(Matrix(output_size, 1)),
       weights_optimizer(std::move(opt -> clone())),
-      bias_optimizer(std::move(opt -> clone())),
-      init_type(init) {
-        if (init_type == 0) weights.randomize();    // Random
-        else if (init_type == 1) weights.he_init(input_size);    // He
-        else if (init_type == 2) weights.lecun_init(input_size);    // LeCun
-        bias.randomize(-0.01, 0.01);  
+      bias_optimizer(std::move(opt -> clone())), init_type(init) {
+        initialize(input_size);
+    }
+
+    void initialize(int fan_in) {
+        if (init_type == 0) weights.random_init();    // random
+        else if (init_type == 1) weights.he_init(fan_in);    // He
+        else if (init_type == 2) weights.lecun_init(fan_in);    // LeCun
+        bias.random_init(-0.01, 0.01);  
     }
 
     Matrix forward(const Matrix& input) {    // Assume input is already flattened(column vector)

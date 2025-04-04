@@ -9,5 +9,5 @@
 
 
 @winteruss
-- [ ] He initialization
-- [ ] Pre-processing Data for Optimization
+- [x] He initialization
+- [x] Pre-processing Data for Optimization

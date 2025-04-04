@@ -5,6 +5,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <random>
 
 #include "matrix.h"
 
@@ -12,6 +14,69 @@ class Dataset {
   public:
     std::vector<std::pair<Matrix, Matrix>> data;
     Dataset() = default;
+
+    void normalize_dataset() {
+        if (data.empty()) return;
+
+        std::vector<double> all_values;
+        for (const auto& [image, target] : data) {
+            for (int i = 0; i < image.rows; i++) {
+                for (int j = 0; j < image.cols; j++) {
+                    all_values.push_back(image.data[i][j]);
+                }
+            }
+        }
+
+        double min_val = *std::min_element(all_values.begin(), all_values.end());
+        double max_val = *std::max_element(all_values.begin(), all_values.end());
+
+        for (auto& [image, target] : data) {
+            for (int i = 0; i < image.rows; i++) {
+                for (int j = 0; j < image.cols; j++) {
+                    image.data[i][j] = (image.data[i][j] - min_val) / (max_val - min_val + 1e-8);
+                }
+            }
+        }
+    }
+
+    void standardize_dataset() {
+        if (data.empty()) return;
+
+        std::vector<double> all_values;
+        for (const auto& [image, target] : data) {
+            for (int i = 0; i < image.rows; i++) {
+                for (int j = 0; j < image.cols; j++) {
+                    all_values.push_back(image.data[i][j]);
+                }
+            }
+        }
+
+        double mean = 0.0, variance = 0.0;
+
+        for (double val : all_values) mean += val;
+        mean /= all_values.size();
+
+        for (double val : all_values) {
+            double diff = val - mean;
+            variance += diff * diff;
+        }
+        variance /= all_values.size();
+        double std_dev = std::sqrt(variance + 1e-8);
+
+        for (auto& [image, target] : data) {
+            for (int i = 0; i < image.rows; i++) {
+                for (int j = 0; j < image.cols; j++) {
+                    image.data[i][j] = (image.data[i][j] - mean) / std_dev;
+                }
+            }
+        }
+    }
+
+    void shuffle() {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::shuffle(data.begin(), data.end(), gen);
+    }
 
     void loadCSV(const std::string& filename, int rows, int cols, int output_size) {
         std::ifstream file(filename);
