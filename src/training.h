@@ -22,7 +22,7 @@ void trainImage(Model& model, const Matrix& input, const Matrix& target, int epo
 
 }
 
-void trainDataset(Model& model, Dataset& dataset, int epochs, double target_loss = 0.01, bool normalize = true) {   // If normalize is false, standardize
+void trainDataset(Model& model, Dataset& dataset, int epochs, double target_loss = 0.1) {
     auto start_total = std::chrono::high_resolution_clock::now(); // system time start
     int convergence_epoch = -1; // convergence epoch reset
     for (int epoch = 0; epoch < epochs; epoch++) {
@@ -33,11 +33,6 @@ void trainDataset(Model& model, Dataset& dataset, int epochs, double target_loss
 
         for (int i = 0; i < dataset.size(); i++) {
             const auto& [input, target] = dataset[i];
-            if (normalize) {
-                input.normalize();
-            } else {
-                input.standardize();
-            }
             auto [logits, loss] = model.forward(input, target);
             model.backward(logits, target);
             model.update();

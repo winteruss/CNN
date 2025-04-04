@@ -13,7 +13,7 @@ class ConvLayer {
     std::unique_ptr<Optimizer> kernel_optimizer, bias_optimizer;
     int init_type; // 0: random, 1: He, 2: LeCun
 
-    ConvLayer(std::unique_ptr<Optimizer> opt, int fan_in, int init = 0) : kernel(3, 3), grad_kernel(3, 3), bias(0.0), grad_bias(0.0),
+    ConvLayer(std::unique_ptr<Optimizer> opt, int fan_in, int init = 0) : kernel(5, 5), grad_kernel(5, 5), bias(0.0), grad_bias(0.0),
       kernel_optimizer(std::move(opt -> clone())), bias_optimizer(std::move(opt -> clone())), init_type(init) {
         if (init_type == 0) kernel.randomize();    // Random
         else if (init_type == 1) kernel.he_init(fan_in);    // He

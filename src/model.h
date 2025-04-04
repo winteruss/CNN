@@ -30,7 +30,7 @@ class Model {
     : fc(calculate_fc_input_size(input_rows, input_cols, num_conv_layers), output_size, opt -> clone(), init_type), output_size(output_size), learning_rate(lr) {
         conv_layers.reserve(num_conv_layers);
         for (int i = 0; i < num_conv_layers; i++) {
-            conv_layers.emplace_back(opt -> clone(), input_rows * input_cols, init_type);
+            conv_layers.emplace_back(opt -> clone(), 1 * 5 * 5, init_type); // 1 channel, 5x5 kernel
             pool_layers.emplace_back();
         }
         intermediates.resize(2 * num_conv_layers + 1);  // Conv, ReLu Outputs + FC Input
