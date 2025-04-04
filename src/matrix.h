@@ -3,8 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#include <cstdlib>
-#include <ctime>
+#include <random>
 #include <cmath>
 #include <algorithm>
 
@@ -127,25 +126,37 @@ class Matrix {
     }
 
     void randomize(double min_val = -0.5, double max_val = 0.5) {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> dist(min_val, max_val);
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                double rand_val = min_val + (max_val - min_val) * (rand() / (double)RAND_MAX);
-                data[i][j] = rand_val;
+                data[i][j] = dist(gen);
             }
         }
     }
 
     void he_init(int fan_in) {    // He Initialization
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
         double std_dev = std::sqrt(2.0 / fan_in);
-        for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
-            data[i][j] = std_dev * (2.0 * (rand() / (double)RAND_MAX) - 1.0);
+        std::normal_distribution<double> dist(0.0, std_dev);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] = dist(gen);
+            }
         }
     }
 
     void lecun_init(int fan_in) {    // LeCun Initization
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
         double std_dev = std::sqrt(1.0 / fan_in);
-        for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) {
-            data[i][j] = std_dev * (2.0 * (rand() / (double)RAND_MAX) - 1.0);
+        std::normal_distribution<double> dist(0.0, std_dev);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] = dist(gen);
+            }
         }
     }
 

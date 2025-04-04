@@ -11,7 +11,7 @@ int main() {
     train_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_test.csv", 28, 28, 10);
     test_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_test.csv", 28, 28, 10);
 
-    int dataset_normal_type = 0;    // 0: normalize, 1: standardize
+    int dataset_normal_type = 0;    // 0: Normalize, 1: Standardize
     if (dataset_normal_type == 0) {
         train_data.normalize_dataset();
         test_data.normalize_dataset();
@@ -23,7 +23,7 @@ int main() {
     int num_conv_layers = 2;
     int fc_input_size = Model::calculate_fc_input_size(28, 28, num_conv_layers);
     int epochs = 100;
-    double lr = 0.001;
+    double lr = 0.1;
 
     auto sgd = std::make_unique<SGD>(lr);
     auto momentum = std::make_unique<Momentum>(lr, 0.9);
@@ -31,10 +31,10 @@ int main() {
     auto rmsprop = std::make_unique<RMSProp>(lr, 0.9);
     auto adam = std::make_unique<Adam>(lr, 0.9, 0.999);
 
-    int init_type = 0; // 0: Random, 1: He, 2: LeCun
-    bool normal_type = true;    // 0: normalize, 1: standardize
+    int init_type = 1; // 0: Random, 1: He, 2: LeCun
+    bool normal_type = true;    // 0: Normalize, 1: Standardize
 
-    Model model(28, 28, 10, lr, num_conv_layers, std::move(sgd), init_type);
+    Model model(28, 28, 10, lr, num_conv_layers, std::move(adam), init_type);
 
     trainDataset(model, train_data, epochs, 0.01, normal_type);
     model.save("trained_model.txt");
