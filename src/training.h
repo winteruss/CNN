@@ -1,5 +1,5 @@
-#ifndef TRAIN_H
-#define TRAIN_H
+#ifndef TRAINING_H
+#define TRAINING_H
 
 #include <iostream>
 #include <chrono>
@@ -19,17 +19,16 @@ void trainImage(Model& model, const Matrix& input, const Matrix& target, int epo
 
         std::cout << "  Loss: " << loss << std::endl;
     }
-
 }
 
 void trainDataset(Model& model, Dataset& dataset, int epochs, double target_loss = 0.1) {
-    auto start_total = std::chrono::high_resolution_clock::now(); // system time start
-    int convergence_epoch = -1; // convergence epoch reset
+    auto start_total = std::chrono::high_resolution_clock::now(); // System time start
+    int convergence_epoch = -1; // Convergence epoch reset
     for (int epoch = 0; epoch < epochs; epoch++) {
         std::cout << "Epoch " << epoch + 1 << std::endl;
         double total_loss = 0.0;
         dataset.shuffle();
-        auto start_epoch = std::chrono::high_resolution_clock::now(); // epoch time start
+        auto start_epoch = std::chrono::high_resolution_clock::now(); // Epoch time start
 
         for (int i = 0; i < dataset.size(); i++) {
             const auto& [input, target] = dataset[i];
@@ -39,7 +38,7 @@ void trainDataset(Model& model, Dataset& dataset, int epochs, double target_loss
             total_loss += loss;
         }
 
-        auto end_epoch = std::chrono::high_resolution_clock::now(); // epoch time end
+        auto end_epoch = std::chrono::high_resolution_clock::now(); // Epoch time end
         double epoch_time = std::chrono::duration<double>(end_epoch - start_epoch).count();
 
         double avg_loss = total_loss / dataset.size();
@@ -50,7 +49,7 @@ void trainDataset(Model& model, Dataset& dataset, int epochs, double target_loss
         }
     }
 
-    auto end_total = std::chrono::high_resolution_clock::now(); // system time end
+    auto end_total = std::chrono::high_resolution_clock::now(); // System time end
     double total_time = std::chrono::duration<double>(end_total - start_total).count();
     std::cout << "Total Training Time: " << total_time << " seconds" << std::endl;
 

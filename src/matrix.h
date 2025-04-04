@@ -84,7 +84,7 @@ class Matrix {
         return flipped;
     }
 
-    Matrix normalize() const {    // Min-Max Normalization
+    Matrix normalize() const {    // Min-Max Normalization - Currently not in use
         Matrix normalized(rows, cols);
         double max_val = data[0][0];
         double min_val = data[0][0];
@@ -105,7 +105,7 @@ class Matrix {
         return normalized;
     }
 
-    Matrix standardize() const {    // Z-Score Standardization
+    Matrix standardize() const {    // Z-Score Standardization - Currently not in use
         Matrix standardized(rows, cols);
         double mean = 0.0, variance = 0.0;
 
@@ -319,11 +319,29 @@ class Matrix {
         return *this;
     }
 
+    Matrix& operator+=(double scalar) {  // Addition with Broadcasting
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] += scalar;
+            }
+        }
+        return *this;
+    }
+
     Matrix& operator-=(const Matrix& other) {
         if (rows != other.rows || cols != other.cols) throw std::invalid_argument("Matrix size mismatch.");
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 data[i][j] -= other.data[i][j];
+            }
+        }
+        return *this;
+    }
+
+    Matrix& operator-=(double scalar) {  // Subtraction with Broadcasting
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] -= scalar;
             }
         }
         return *this;

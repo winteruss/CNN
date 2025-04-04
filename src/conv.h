@@ -7,48 +7,72 @@
 
 class ConvLayer {
   public:
-    Matrix kernel, grad_kernel;
+    std::vector<std::vector<Matrix>> kernels, grad_kernels;
     double bias, grad_bias;
-    Matrix input;   // Save for backpropagation
+    std::vector<Matrix> input;   // Save for backpropagation
     std::unique_ptr<Optimizer> kernel_optimizer, bias_optimizer;
     int init_type; // 0: random, 1: He, 2: LeCun
+    int num_kernels;
 
-    ConvLayer(std::unique_ptr<Optimizer> opt, int fan_in, int init = 0) : kernel(5, 5), grad_kernel(5, 5), bias(0.0), grad_bias(0.0),
-      kernel_optimizer(std::move(opt -> clone())), bias_optimizer(std::move(opt -> clone())), init_type(init) {
-        if (init_type == 0) kernel.randomize();    // Random
-        else if (init_type == 1) kernel.he_init(fan_in);    // He
-        else if (init_type == 2) kernel.lecun_init(fan_in);    // LeCun
-    }
-
-    ConvLayer(const Matrix& k) : kernel(k) {}
-
-    Matrix forward(const Matrix& input) {
-        this -> input = input;
-        Matrix padded_input = input.pad(kernel.cols / 2);   // Suppose that kernel is square
-        Matrix output = padded_input.correlate(kernel) + bias;
-        return output;
-    }
-
-    Matrix backward(const Matrix& grad_out) {
-        Matrix padded_input = input.pad(kernel.cols / 2);
-        Matrix grad_input(input.rows, input.cols);
-        grad_kernel = Matrix(kernel.rows, kernel.cols);
-        grad_bias = 0.0;
-
-        // Gradients w.r.t. kernel, bias and input
-        grad_kernel = padded_input.correlate(grad_out);
-        for (int i = 0; i < input.rows; i++) {
-            for (int j = 0; j < input.cols; j++) {
-                grad_bias += grad_out.data[i][j];
+    ConvLayer(std::unique_ptr<Optimizer> opt, int num_input_channels, int num_kernels = 8, int init = 0) : bias(0.0), grad_bias(0.0),
+      kernel_optimizer(std::move(opt -> clone())), bias_optimizer(std::move(opt -> clone())), init_type(init), num_kernels(num_kernels) {
+        kernels.resize(num_kernels, std::vector<Matrix>(num_input_channels, Matrix(5, 5)));
+        grad_kernels.resize(num_kernels, std::vector<Matrix>(num_input_channels, Matrix(5, 5)));
+        for (auto& filter_kernels : kernels) { 
+            for (auto& kernel : filter_kernels) {
+                if (init_type == 0) kernel.randomize();
+                else if (init_type == 1) kernel.he_init(num_input_channels * 5 * 5);
+                else if (init_type == 2) kernel.lecun_init(num_input_channels * 5 * 5);
             }
         }
-        grad_input = grad_out.correlate(kernel, true);
+    }
+
+    std::vector<Matrix> forward(const std::vector<Matrix>& inputs) {
+        this -> input = inputs;
+        std::vector<Matrix> outputs(num_kernels);
+
+        for (int i = 0; i < num_kernels; i++) {
+            outputs[i] = Matrix(inputs[0].rows, inputs[0].cols); // Initialize output feature map
+            for (int c = 0; c < inputs.size(); c++) {
+                Matrix padded_input = inputs[c].pad(kernels[0][0].cols / 2);
+                outputs[i] += padded_input.correlate(kernels[i][c]); // Sum across channels
+            }
+            outputs[i] += bias; // Add bias to entire feature map
+        }
+        return outputs;
+    }
+
+    std::vector<Matrix> backward(const std::vector<Matrix>& grad_out) {
+        std::vector<Matrix> grad_input(input.size(), Matrix(input[0].rows, input[0].cols));
+        grad_kernels = std::vector<std::vector<Matrix>>(num_kernels, std::vector<Matrix>(input.size(), Matrix(5, 5)));
+        grad_bias = 0.0;
+
+        int pad_size = kernels[0][0].cols / 2;
+        for (int i = 0; i < num_kernels; i++) {
+            Matrix padded_grad_out = grad_out[i].pad(pad_size); // Adjust padding
+            for (int c = 0; c < input.size(); c++) {
+                Matrix padded_input = input[c].pad(pad_size);
+                // Gradients w.r.t. kernel and input
+                grad_kernels[i][c] = padded_input.correlate(grad_out[i]);
+                grad_input[c] += padded_grad_out.correlate(kernels[i][c], true); // Full convolution for input grad
+            }
+            for (int r = 0; r < grad_out[i].rows; r++) {
+                for (int c = 0; c < grad_out[i].cols; c++) {
+                    // Gradients w.r.t. bias
+                    grad_bias += grad_out[i].data[r][c];
+                }
+            }
+        }
         return grad_input;
     }
 
     void update() {
-        kernel_optimizer -> update(kernel, grad_kernel);
-        bias_optimizer -> update(bias, grad_bias);
+        for (int i = 0; i < num_kernels; i++) {
+            for (int c = 0; c < kernels[i].size(); c++) {
+                kernel_optimizer->update(kernels[i][c], grad_kernels[i][c]);
+            }
+        }
+        bias_optimizer->update(bias, grad_bias);
     }
 };
 

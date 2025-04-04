@@ -8,10 +8,11 @@
 
 int main() {
     Dataset train_data, test_data;
-    train_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_train_10k.csv", 28, 28, 10);
+    train_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_train_1k.csv", 28, 28, 10);
     test_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_test.csv", 28, 28, 10);
 
     int dataset_normal_type = 0;    // 0: Normalize, 1: Standardize
+
     if (dataset_normal_type == 0) {
         train_data.normalize_dataset();
         test_data.normalize_dataset();
@@ -21,7 +22,6 @@ int main() {
     }
 
     int num_conv_layers = 2;
-    int fc_input_size = Model::calculate_fc_input_size(28, 28, num_conv_layers);
     int epochs = 100;
     double lr = 0.0001;
 
@@ -33,7 +33,7 @@ int main() {
 
     int init_type = 1; // 0: Random, 1: He, 2: LeCun
 
-    Model model(28, 28, 10, lr, num_conv_layers, std::move(adam), init_type);
+    Model model(28, 28, 10, lr, num_conv_layers, std::move(adam), init_type, 8);
 
     trainDataset(model, train_data, epochs, 0.1);
     model.save("trained_model.txt");
