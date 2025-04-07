@@ -24,7 +24,6 @@ class FCLayer {
         if (init_type == 0) weights.randomize();    // Random
         else if (init_type == 1) weights.he_init(input_size);    // He
         else if (init_type == 2) weights.lecun_init(input_size);    // LeCun
-        bias.randomize(-0.01, 0.01);  
     }
 
     Matrix forward(const Matrix& input) {    // Assume input is already flattened(column vector)
@@ -33,11 +32,11 @@ class FCLayer {
         return result;
     }
 
-    Matrix backward(const Matrix& grad_output) {
+    Matrix backward(const Matrix& grad_out) {
         // Gradients w.r.t. weights, bias, and input
-        grad_weights = grad_output * input.transpose();
-        grad_bias = grad_output;
-        Matrix grad_input = weights.transpose() * grad_output;
+        grad_weights = grad_out * input.transpose();
+        grad_bias = grad_out;
+        Matrix grad_input = weights.transpose() * grad_out;
         return grad_input;
     }
 

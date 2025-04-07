@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "conv.h"
+#include "batchnorm.h"
 #include "pool.h"
 #include "fc.h"
 #include "activation.h"
@@ -15,6 +16,7 @@
 class Model {
   public:
     std::vector<ConvLayer> conv_layers;
+    std::vector<BatchNormLayer> bn_layers;
     std::vector<PoolLayer> pool_layers;
     FCLayer fc;
 
@@ -33,10 +35,11 @@ class Model {
         int num_input_channels = 1; // First layer
         for (int i = 0; i < num_conv_layers; i++) {
             conv_layers.emplace_back(opt -> clone(), num_input_channels, num_kernels, init_type);
+            bn_layers.emplace_back(num_kernels, opt -> clone(), 0.9);
             pool_layers.emplace_back();
             num_input_channels = num_kernels; // Output channels become input channels for next layer
         }
-        intermediates.resize(2 * num_conv_layers + 1);  // Conv, ReLu Outputs + FC Input
+        intermediates.resize(3 * num_conv_layers + 1);  // Conv, ReLu Outputs + FC Input
     }
 
     std::pair<Matrix, double> forward(const Matrix& input, const Matrix& target) {
@@ -45,11 +48,13 @@ class Model {
         for (int i = 0; i < conv_layers.size(); i++) {
             std::vector<Matrix> conv_out = conv_layers[i].forward(x);
             intermediates[idx++] = conv_out;
-            for (auto& out : conv_out) out = leakyReLU(out);
-            intermediates[idx++] = conv_out;
-            std::vector<Matrix> pooled(conv_out.size());
-            for (size_t j = 0; j < conv_out.size(); j++) {
-                pooled[j] = pool_layers[i].forward(conv_out[j]);
+            std::vector<Matrix> bn_out = bn_layers[i].forward(conv_out);
+            intermediates[idx++] = bn_out;
+            for (auto& out : bn_out) out = leakyReLU(out);
+            intermediates[idx++] = bn_out;
+            std::vector<Matrix> pooled(bn_out.size());
+            for (size_t j = 0; j < bn_out.size(); j++) {
+                pooled[j] = pool_layers[i].forward(bn_out[j]);
             }
             x = pooled;
         }
@@ -94,23 +99,25 @@ class Model {
 
             // Backprop through LeakyReLU
             for (size_t j = 0; j < grad_x.size(); j++) {
-                grad_x[j] = leakyReLU_backward(intermediates[2 * i + 1][j], grad_x[j]);
+                grad_x[j] = leakyReLU_backward(intermediates[3 * i + 1][j], grad_x[j]);
             }
 
-            // Backprop through conv layer
+            // Backprop through bn, conv layer
+            grad_x = bn_layers[i].backward(grad_x);
             grad_x = conv_layers[i].backward(grad_x); // grad_x now has gradients w.r.t. conv input
 
-            // For all but the first layer, grad_x matches the previous layer???? pooled output size
+            // For all but the first layer, grad_x matches the previous layer's pooled output size
             if (i > 0) {
-                grad_x.resize(intermediates[2 * (i - 1) + 1].size(), 
-                              Matrix(intermediates[2 * (i - 1)].size() ? intermediates[2 * (i - 1)][0].rows : grad_x[0].rows, 
-                                     intermediates[2 * (i - 1)].size() ? intermediates[2 * (i - 1)][0].cols : grad_x[0].cols));
+                grad_x.resize(intermediates[3 * (i - 1) + 1].size(), 
+                              Matrix(intermediates[3 * (i - 1)].size() ? intermediates[3 * (i - 1)][0].rows : grad_x[0].rows, 
+                                     intermediates[3 * (i - 1)].size() ? intermediates[3 * (i - 1)][0].cols : grad_x[0].cols));
             }
         }
     }
 
     void update() {
         for (auto& conv : conv_layers) conv.update();
+        for (auto& bn : bn_layers) bn.update();
         fc.update();
     }
 
@@ -141,6 +148,19 @@ class Model {
                 }
             }
             ofs << "Bias: " << conv.bias << "\n\n";
+
+            // Save batch normalization layers
+            const auto& bn = bn_layers[layer];
+            ofs << "Batch Normalization Layer: " << layer << ":\n";
+            ofs << "Gamma: ";
+            for (const auto& g : bn.gamma) ofs << g.data[0][0] << " ";
+            ofs << "\nBeta: ";
+            for (const auto& b : bn.beta) ofs << b.data[0][0] << " ";
+            ofs << "\nEMA Mean: ";
+            for (const auto& m : bn.EMA_mean) ofs << m.data[0][0] << " ";
+            ofs << "\nEMA Var: ";
+            for (const auto& v : bn.EMA_var) ofs << v.data[0][0] << " ";
+            ofs << "\n\n";
         }
     
         // Save fully connected layer
@@ -159,6 +179,10 @@ class Model {
         ofs << "\n";
     
         ofs.close();
+    }
+
+    void set_training(bool mode) {
+        for (auto& bn : bn_layers) bn.set_training(mode);
     }
 
     static int calculate_fc_input_size(int rows, int cols, int num_conv_layers) {

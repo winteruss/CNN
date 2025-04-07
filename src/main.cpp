@@ -8,7 +8,7 @@
 
 int main() {
     Dataset train_data, test_data;
-    train_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_train_1k.csv", 28, 28, 10);
+    train_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_train_10k.csv", 28, 28, 10);
     test_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_test.csv", 28, 28, 10);
 
     int dataset_normal_type = 1;    // 0: Normalize, 1: Standardize
@@ -31,13 +31,15 @@ int main() {
     auto rmsprop = std::make_unique<RMSProp>(lr, 0.9);
     auto adam = std::make_unique<Adam>(lr, 0.9, 0.999);
 
-    int init_type = 1; // 0: Set all initial param to 0, 1: He, 2: LeCun
+    int init_type = 1;  // 0: Set all initial param to 0, 1: He, 2: LeCun
 
     Model model(28, 28, 10, lr, num_conv_layers, std::move(adam), init_type, 8);
 
+    model.set_training(true);   // Set training mode for batch normalization
     trainDataset(model, train_data, epochs, 0.1);
     model.save("trained_model.txt");
 
+    model.set_training(false);  // Set evaluation mode for batch normalization
     int correct = 0;
     for (size_t i = 0; i < test_data.size(); i++) {
         const auto& [input, target] = test_data[i];
