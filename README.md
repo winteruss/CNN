@@ -11,3 +11,7 @@
 @winteruss
 - [x] He initialization
 - [x] Pre-processing Data for Optimization
+
+
+final results
+-[ ] Test around to find the best combination
