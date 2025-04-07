@@ -20,7 +20,7 @@ class ConvLayer {
         grad_kernels.resize(num_kernels, std::vector<Matrix>(num_input_channels, Matrix(5, 5)));
         for (auto& filter_kernels : kernels) { 
             for (auto& kernel : filter_kernels) {
-                if (init_type == 0) kernel.randomize();
+                if (init_type == 0) kernel = Matrix(5, 5);
                 else if (init_type == 1) kernel.he_init(num_input_channels * 5 * 5);
                 else if (init_type == 2) kernel.lecun_init(num_input_channels * 5 * 5);
             }

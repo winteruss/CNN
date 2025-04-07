@@ -11,7 +11,7 @@ int main() {
     train_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_train_1k.csv", 28, 28, 10);
     test_data.loadCSV("C:\\Users\\saeol\\Desktop\\C Projects\\CNN\\data\\mnist_test.csv", 28, 28, 10);
 
-    int dataset_normal_type = 0;    // 0: Normalize, 1: Standardize
+    int dataset_normal_type = 1;    // 0: Normalize, 1: Standardize
 
     if (dataset_normal_type == 0) {
         train_data.normalize_dataset();
@@ -31,7 +31,7 @@ int main() {
     auto rmsprop = std::make_unique<RMSProp>(lr, 0.9);
     auto adam = std::make_unique<Adam>(lr, 0.9, 0.999);
 
-    int init_type = 1; // 0: Random, 1: He, 2: LeCun
+    int init_type = 1; // 0: Set all initial param to 0, 1: He, 2: LeCun
 
     Model model(28, 28, 10, lr, num_conv_layers, std::move(adam), init_type, 8);
 
