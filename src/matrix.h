@@ -39,14 +39,17 @@ class Matrix {
     }
 
     Matrix pad(int pads) const {
+        if (pads < 0) throw std::invalid_argument("Pad size must be at least 0");
         int output_rows = rows + 2 * pads;
         int output_cols = cols + 2 * pads;
 
-        Matrix padded(output_rows, output_cols);
+        Matrix padded(output_rows, output_cols,0.0);
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
+                if (i + pads < output_rows && j+ pads < output_cols) {
                 padded.data[i+pads][j+pads] = data[i][j];
+                }
             }
         }
         return padded;
@@ -167,8 +170,11 @@ class Matrix {
 
         int out_rows = rows - kernel.rows + 1;
         int out_cols = cols - kernel.cols + 1;
-        Matrix result(out_rows, out_cols);
+        if (out_rows <= 0 || out_cols <= 0) {
+        throw std::invalid_argument("Output matrix size is not valid");
+        }
 
+        Matrix result(out_rows, out_cols);
         Matrix _kernel = flip_kernel ? kernel.flip() : kernel;
         
         for (int i = 0; i < out_rows; i++) {
@@ -176,6 +182,7 @@ class Matrix {
                 double sum = 0.0;
                 for (int ki = 0; ki < _kernel.rows; ki++) {
                     for (int kj = 0; kj < _kernel.cols; kj++) {
+                        if (i + ki >= rows || j + kj >= cols) continue;
                         sum += data[i + ki][j + kj] * _kernel.data[ki][kj];
                     }
                 }
